@@ -4,7 +4,7 @@ const iconv = require('iconv-lite');
 const { exitOnError } = require('winston');
 
 (async () => {
-    const host = 'https://post.smzdm.com/hot_1/';
+    const host = 'http://www.a9vg.com/list/news';
     // 发起 HTTP GET 请求
     const response = await got({
         method: 'get',
@@ -13,15 +13,12 @@ const { exitOnError } = require('winston');
     const data = response.body;
     // console.log(data);
     const $ = cheerio.load(data);
-
-    // console.log($('.content p:first-child a').text());
-
-    let list = $('.z-feed-title').get();
+    const list = $('.a9-rich-card-list li').get();
 
     const items = list.map((i) => {
         const item = $(i);
-        const url = item.find('a').attr('href');
-        const title = item.find('a').text();
+        const url = `http://www.a9vg.com${item.find('a').attr('href')}`;
+        const title = item.find('.a9-rich-card-list_label').text();
         // console.log(url);
         // console.log(title);
 
@@ -29,16 +26,15 @@ const { exitOnError } = require('winston');
             title: title,
             description: title,
             link: url,
-            pubDate: new Date(item.ctime * 1000).toUTCString(),
+            pubDate: new Date(item.find('.a9-rich-card-list_infos').text()).toUTCString(),
         };
-
         return single;
     });
+    // console.log(items);
 
     const result = await Promise.all(
         items.map(async (item) => {
-            const link = item.link;
-            console.log(link);
+            console.log(item.link);
             // const cache = await ctx.cache.get(link);
             // if (cache) {
             //     return Promise.resolve(JSON.parse(cache));
@@ -46,12 +42,10 @@ const { exitOnError } = require('winston');
 
             const itemReponse = await got({
                 method: 'get',
-                url: link,
+                url: item.link,
             });
 
             const data = itemReponse.body;
-            // console.log(data);
-            // console.log(data);
             const itemElement = cheerio.load(data);
 
             // const t = itemElement('.article-info > .date').text()
@@ -60,12 +54,12 @@ const { exitOnError } = require('winston');
             // console.log(Date.parse(t))
             // console.log(new Date(t * 1000).toUTCString());
 
-            // var dd = itemElement('#__NEXT_DATA__').html()
-            // dd = JSON.parse(dd)
-            // console.log(dd.props.pageProps.html);
+            var description = itemElement('.c-article-main_contentraw').html();
+            // dd = JSON.parse(dd);
+            console.log(description);
 
-            item.description = itemElement('#articleId').html();
-            console.log(item.description);
+            item.description = description;
+            // console.log(item.description);
             // console.log(item.description);
             // ctx.cache.set(link, JSON.stringify(item));
             // return Promise.resolve(item);
