@@ -5,54 +5,56 @@ const { exitOnError } = require('winston');
 const { JSDOM } = require('jsdom');
 
 (async () => {
-    const host = 'https://www.theblockbeats.com/';
+    const host = 'https://www.chainnews.com/';
     // 发起 HTTP GET 请求
     const response = await got({
         method: 'get',
         url: host,
     });
-    // const data = response.body;
-    data2 =  new JSDOM(response.body, {
-        runScripts: 'dangerously',
-    });
+    const data = response.body;
+    // const data2 = new JSDOM(response.body, {
+    //     runScripts: 'dangerously',
+    // });
 
     // const blogTitle = data2.window.__INITIAL_STATE__.pageData.data.baseInfo.blogModule.title;
     // console.log(blogTitle);
 
-    const list = data2.window.__NUXT__.data[0].articleList;
+    // const list = data2.window.__NUXT__.data[0].articleList;
     // console.log(response.body);
     // console.log(list);
-    // const $ = cheerio.load(data);
+    const $ = cheerio.load(data);
 
-    // const list = $('.b-list__row.b-list-item.b-imglist-item .b-list__main .b-list__tile p.b-list__main__title').get();
+    const list = $('h2.feed-post-title').get();
     // const boardTitle = $('title').html();
     // console.log(boardTitle);
 
-    var items = list.map((i) => {
-        // const item = $(i);
+    const items = list.map((i) => {
+        const item = $(i);
         // console.log(i, new Date().toUTCString());
-        // const url = i.url;
-        // console.log(url);
-        // const title = i.title;
+        const url = item.find('a').attr('href');
+        const title = item.find('a').text();
         // console.log(url);
         // console.log(title);
 
-        if (i.flash == 1) {
-            // 排除快讯
-            return
-        }
+        // if (i.flash === 1) {
+        //     // 排除快讯
+        //     return;
+        // }
 
         const single = {
-            title: i.title,
-            description: i.im_abstract,
-            link: `https://www.theblockbeats.com/news/${i.id}`,
+            title: url,
+            description: title,
+            link: `https://www.chainnews.com${url}`,
         };
         return single;
     });
     // 删除 undefined
-    while (items.indexOf(undefined) != -1) {
-        items.splice(items.findIndex(item => item === undefined), 1)
-    }
+    // while (items.indexOf(undefined) != -1) {
+    //     items.splice(
+    //         items.findIndex((item) => item === undefined),
+    //         1
+    //     );
+    // }
     // items.splice(items.findIndex(i => i == undefined), 1)
     // console.log(items)
     // console.log(items.indexOf(undefined));
@@ -67,34 +69,38 @@ const { JSDOM } = require('jsdom');
             //     return Promise.resolve(JSON.parse(cache));
             // }
 
-            const response = await got({
-                method: 'get',
-                url: item.link,
-            });
+            // const response = await got({
+            //     method: 'get',
+            //     url: item.link,
+            // });
             // const data = response.body;
-            const data =  new JSDOM(response.body, {
-                runScripts: 'dangerously',
-            });
+            // const data = new JSDOM(response.body, {
+            //     runScripts: 'dangerously',
+            // });
 
-            const c = data.window.__NUXT__.data[0].infoList.content;
+            // const c = data.window.__NUXT__.data[0].infoList.content;
             // console.log(c);
 
             // console.log(c.richText);
 
-            // const itemReponse = await got.get(item.link);
+            const itemReponse = await got.get(item.link);
 
-            // const data = itemReponse.body;
+            const data = itemReponse.body;
 
-            // const itemElement = cheerio.load(data);
+            const itemElement = cheerio.load(data);
 
-            // const t = itemElement('.article-info > .date').text()
+            let t = itemElement('h2.post-content.markdown').html();
+            if (t === null) {
+                t = itemElement('div.post-content.markdown').html();
+            }
+            // console.log(t);
             // console.log(t)
             // t = Date.parse(t)
             // console.log(Date.parse(t))
             // console.log(new Date(t * 1000).toUTCString());
 
             // var description = itemElement('.c-post__body .c-article__content').html();
-            item.description = c;
+            // item.description = c;
             // return item;
             // dd = JSON.parse(dd);
             // console.log(description);
